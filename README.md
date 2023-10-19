@@ -6,6 +6,7 @@ We use the flowing packages and tools to develop the IdP:
 
 - [Passport Package](https://laravel.com/docs/10.x/passport): Authentication package
 - [Sail Package](https://laravel.com/docs/10.x/sail): Development environment with Docker and PHP 8.2 runtime, MySQL
+- [Breeze Package](https://github.com/laravel/breeze)
 
 ## Preparation
 
@@ -93,6 +94,39 @@ public function boot(): void
     );
 }
 ```
+
+### Create example User
+Using tinker and create an example user
+```php
+\App\Models\User::query()->create([
+        'email' => 'example@gmail.com',
+        'password' => '123455667',
+        'name' => 'example',
+        'email_verified_at' => now()
+    ])
+```
+
+### Managing clients
+
+To implement an identity provider for authenticating consumer apps (also known as client apps), we first need to create
+a corresponding client for each application.
+
+There are various methods to manage clients in Laravel Passport. However, we will utilize the `passport:client` command
+for a quick client registration.
+
+In practical projects, it is advisable to use a management screen instead of this approach.
+
+```shell
+# Run the following command and input the prompt
+# With native
+php artisan passport:client
+
+# With sail and docker
+sail php artisan passport:client
+```
+
+Example:
+![create-client command](./assets/create-client.png)
 
 ## OpenId Connect core
 
