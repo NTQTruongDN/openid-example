@@ -4,6 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Laravel\Passport\Passport;
+
+use function route as route;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,3 +39,13 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::get('/.well-known/openid-configuration', function () {
+    return response()->json([
+        'issuer' => config('app.url'),
+        'authorization_endpoint' => route('passport.authorizations.authorize'),
+        'token_endpoint' => route('passport.token'),
+        'scopes_supported' => Passport::scopeIds(),
+        'response_types_supported' => ["code", "code id_token", "id_token", "token id_token"]
+    ]);
+});

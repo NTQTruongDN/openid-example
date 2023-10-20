@@ -95,6 +95,22 @@ public function boot(): void
 }
 ```
 
+6. Defining Token Scopes
+
+The scopes associated with Access Tokens determine what resources will be available when they are used to access OAuth 2.0 protected endpoints. Protected Resource endpoints MAY perform different actions and return different information based on the scope values and other parameters used when requesting the presented Access Token.
+
+Based on [OpenID Connect scope](https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims), we need defined some scope:
+```text
+profile
+  OPTIONAL. This scope value requests access to the End-User's default profile Claims, which are: name, family_name, given_name, middle_name, nickname, preferred_username, profile, picture, website, gender, birthdate, zoneinfo, locale, and updated_at.
+email
+  OPTIONAL. This scope value requests access to the email and email_verified Claims.
+```
+
+- openid: to indicate that the application intends to use OIDC to verify the user's identity.
+- profile: to get name, nickname, and picture.
+- email: to get email and email_verified.
+
 ### Create example User
 Using tinker and create an example user
 ```php
@@ -116,6 +132,8 @@ for a quick client registration.
 
 In practical projects, it is advisable to use a management screen instead of this approach.
 
+In Consumer app, you might be created a callback endpoint and register this call back when you register client.
+
 ```shell
 # Run the following command and input the prompt
 # With native
@@ -126,7 +144,7 @@ sail php artisan passport:client
 ```
 
 Example:
-![create-client command](./assets/create-client.png)
+![create-client command](./docs/assets/create-client.png)
 
 ## OpenId Connect core
 
@@ -156,3 +174,4 @@ OpenID Connect supports 3 main Authentication flow:
 - https://laravel.com/docs/10.x/sail
 - https://auth0.com/docs/get-started/authentication-and-authorization-flow
 - https://openid.net/specs/openid-connect-core-1_0.html
+- https://oauth2.thephpleague.com/authorization-server/auth-code-grant/
