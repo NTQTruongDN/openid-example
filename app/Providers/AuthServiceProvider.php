@@ -42,5 +42,7 @@ class AuthServiceProvider extends ServiceProvider
             'profile' => "View name, nickname, and picture",
             'email' => "Get email and email_verified",
         ]);
+
+        Passport::enableImplicitGrant();
     }
 }

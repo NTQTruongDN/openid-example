@@ -9,43 +9,166 @@ You can [read more in official docs](https://openid.net/specs/openid-connect-cor
 
 ## Flows
 
+### Common flow
+
+Below is the common flow providing by OpenID Connect
+
 ![authorization-flow](./assets/authorization-flow.svg)
 
-## Implement with Laravel passport
+### Detail default flow with passport
 
-### Client send Authentication request to authorize endpoint
+Below is the detailed flow when using Laravel Passport by default.
+
+![authorization-flow-detail](./assets/authorization_flow_detail_with_passport.svg)
+
+## Step by step
+
+### 1. Register client (Authorization Server)
+
+To implement an identity provider for authenticating consumer apps (also known as client apps), we first need to create
+a corresponding client for each application
+
+There are various methods to manage clients in Laravel Passport. However, we will utilize the `passport:client` command
+for a quick client registration.
+
+In practical projects, it is advisable to use a management screen instead of this approach.
+
+In Consumer app, you might be created a callback endpoint and register this call back when you register client.
+
+```shell
+# Run the following command and input the prompt
+# With native
+php artisan passport:client
+
+# With sail and docker
+sail php artisan passport:client
+```
+
+Example:
+
+![create-client command](./assets/create-client.png)
+
+**Explanation:**
+
+**Input:**
+
+- **_Which user ID should the client assigned to?:_**
+    - You can assign an exist user to this client
+- **_What should we name the client?_**
+    - Name of this client.
+    - This name will be shown in the
+      step [Authorization Server Authenticates End-User](#authorization-server-authenticates-end-user--user-authorize)
+- **_Where should we redirect the request after authorization?_**
+    - This is callback url that defined by consumer app.
+    - The callback uri will be called by `Authorization Server` in step authentication and parsing authorize code.
+
+**Output:**
+
+- You will be received the `client_id` and `client_secret`.
+- You might be saved this information and keep it secret
+
+**WARNING:** You need to prepare an account for the steps below.
+
+### 2. Defining Token Scopes
+
+The scopes associated with Access Tokens determine what resources will be available when they are used to access OAuth
+2.0 protected endpoints. Protected Resource endpoints MAY perform different actions and return different information
+based on the scope values and other parameters used when requesting the presented Access Token.
+
+Based on [OpenID Connect scope](https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims), we need defined some
+scope:
+
+```text
+profile
+  OPTIONAL. This scope value requests access to the End-User's default profile Claims, which are: name, family_name, given_name, middle_name, nickname, preferred_username, profile, picture, website, gender, birthdate, zoneinfo, locale, and updated_at.
+email
+  OPTIONAL. This scope value requests access to the email and email_verified Claims.
+```
+
+- **openid**: to indicate that the application intends to use OIDC to verify the user's identity. See more
+  in [standard claims](https://openid.net/specs/openid-connect-core-1_0.html#Claims)
+- **profile**: to get name, nickname, and picture.
+- **email**: to get email and email_verified.
+
+### 3. Client send Authentication request to authorize endpoint (Consumer App)
 
 We will scaffold the next app in `consumer-app` directory for making sample with Client.
 
 Passport is already defined authorize endpoint is `/oauth/authorize`. We need to pass several params:
 
-```text
-client_id (REQUIRED)
-  Client Identifier that we register above
-scope (REQUIRED)
-  MUST contain the openid scope value.
-response_type (REQUIRED)
-  In this flow this flow is `code`
-redirect_uri (REQUIRED)
-  Redirection URI to which the response will be sent. It should be HTTPS schema. Nó là redirect url được khai báo khi tạo client
-prompt (OPTIONAL)
-  the Authorization Server prompts the End-User for re-authentication and consent. This prompt will use in the next step.
+**_Parameters:_**
 
-=> We have url like that:
+- client_id (REQUIRED)
+    - Client Identifier that we register the above step
+- scope (REQUIRED)
+    - Define the
+    - MUST contain the openid scope value.
+- response_type (REQUIRED)
+    - In this flow this value is `code`
+- redirect_uri (REQUIRED)
+    - Redirection URI to which the response will be sent. It should be HTTPS schema.
+    - This is the URI callback we register it in the above step
+- state (RECOMMEND)
+    - The random string
+    - Opaque value used to maintain state between the request and the callback.
+    - Typically, Cross-Site Request Forgery (CSRF, XSRF) mitigation is done by cryptographically binding the value of
+      this parameter with a browser cookie.
+
+```text
+Example
+
 http://localhost/oauth/authorize?client_id=9a67e3f8-8133-4889-bf29-8514c743dc7c
     &redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fuser
     &response_type=code
-    &scope=
+    &scope=openid
     &state=IIZsgmGJmjW4XDOoSJWU6C8xa1iCI9B0djbxXM01
 
 Note: If no prompt value is provided, the user will be prompted for authorization only if they have not previously authorized access to the consuming application for the requested scopes.
 ```
 
-### Authorization Server Authenticates End-User & User Authorize
+**WARNING:** For using scope openid, you need to register token abilities in `AuthServiceProvider`.
 
-http://localhost:3000/user?code=def50....b3bfdb
+### 4. Authorization Server Authenticates End-User & User Authorize
 
-### Parsing Authorize code to access token
+**4.1. Define the login methods**
+
+First of all, You must define the authentication methods and implement it in `Authorization Server`
+
+**4.2. Implement authentication**
+
+**4.2.1. Implement authenticate by password**
+
+In this sample project, we use [Laravel starter kit](https://laravel.com/docs/10.x/starter-kits#laravel-breeze) for
+quickly implement authenticate by password
+
+**4.3. Implement User Approving The Request form**
+
+Laravel Passport provide the default view of authorize. You might publish this view for customize by the following command:
+```shell
+php artisan vendor:publish --tag=passport-views
+```
+
+### 5. Converting Authorization Codes To Access Tokens
+
+If the user approves the authorization request, they will be redirected back to the consuming application.
+
+```text
+The sample URL for call callback client:
+http://localhost:3000/auth/callback/authorization?code=def50....b3bfdb
+```
+
+**5.1. Request to token endpoint**
+
+Passport is already defined authorize endpoint is `/oauth/token`.
+
+**5.1.1. Parameters:**
+- grant_type: With value `authorization_code`
+- client_id: The client account
+- client_secret: The client credential
+- redirect_uri: The client callback uri
+- code: `authorization_code` generated by Authorize Server in the above step
+
+**5.1.2. Response:**
 
 ```json
 {
@@ -56,6 +179,6 @@ http://localhost:3000/user?code=def50....b3bfdb
 }
 ```
 
-### Finish
+### 6. Finish
 
-### Common Problems
+You should save this `access_token` and `refresh_token` in local and use it for accessing to the owner resource.

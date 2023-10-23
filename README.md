@@ -23,7 +23,8 @@ sail composer require laravel/passport
 ```
 
 2. Run migration
-First and foremost, you must run the default migration if you want to utilize the default database structure provided by `laravel/passport`
+   First and foremost, you must run the default migration if you want to utilize the default database structure provided
+   by `laravel/passport`
 
 ```shell
 # With native
@@ -35,7 +36,7 @@ sail php artisan migrate
 
 3. Install passport
 
-This command will create the encryption keys necessary for generating secure access tokens and will also create 
+This command will create the encryption keys necessary for generating secure access tokens and will also create
 'personal access' and 'password grant' clients used for generating access tokens.
 We use the `--uuids` option to employ Client UUIDs instead of auto-increment IDs.
 
@@ -95,24 +96,10 @@ public function boot(): void
 }
 ```
 
-6. Defining Token Scopes
-
-The scopes associated with Access Tokens determine what resources will be available when they are used to access OAuth 2.0 protected endpoints. Protected Resource endpoints MAY perform different actions and return different information based on the scope values and other parameters used when requesting the presented Access Token.
-
-Based on [OpenID Connect scope](https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims), we need defined some scope:
-```text
-profile
-  OPTIONAL. This scope value requests access to the End-User's default profile Claims, which are: name, family_name, given_name, middle_name, nickname, preferred_username, profile, picture, website, gender, birthdate, zoneinfo, locale, and updated_at.
-email
-  OPTIONAL. This scope value requests access to the email and email_verified Claims.
-```
-
-- openid: to indicate that the application intends to use OIDC to verify the user's identity.
-- profile: to get name, nickname, and picture.
-- email: to get email and email_verified.
-
 ### Create example User
+
 Using tinker and create an example user
+
 ```php
 \App\Models\User::query()->create([
         'email' => 'example@gmail.com',
@@ -122,31 +109,7 @@ Using tinker and create an example user
     ])
 ```
 
-### Managing clients
-
-To implement an identity provider for authenticating consumer apps (also known as client apps), we first need to create
-a corresponding client for each application.
-
-There are various methods to manage clients in Laravel Passport. However, we will utilize the `passport:client` command
-for a quick client registration.
-
-In practical projects, it is advisable to use a management screen instead of this approach.
-
-In Consumer app, you might be created a callback endpoint and register this call back when you register client.
-
-```shell
-# Run the following command and input the prompt
-# With native
-php artisan passport:client
-
-# With sail and docker
-sail php artisan passport:client
-```
-
-Example:
-![create-client command](./docs/assets/create-client.png)
-
-## OpenId Connect core
+## OpenId Connect
 
 The instructions above help you integrate `laravel\passport` into a Laravel project.
 
@@ -160,8 +123,11 @@ of Claims to communicate information about the End-User.
 
 It also describes the security and privacy considerations for using OpenID Connect.
 
-## How to implement?
-Now, we dive into how to implement the IdP with some common flows.
+## How to implement with passport?
+
+Next, We dive into how to implement the IdP with `laravel/passport`.
+
+### Authentication flow
 
 OpenID Connect supports 3 main Authentication flow:
 
@@ -169,7 +135,37 @@ OpenID Connect supports 3 main Authentication flow:
 - [Implicit Flow](./docs/IMPLICIT-FLOW.MD)
 - [Hybrid Flow](./docs/HYBRID-FLOW.MD)
 
+## Key Points to Note
+- The Authorization Server is responsible for centrally managing user information and providing authentication methods
+  on this server
+- To integrate with the Authorization Server, it is essential to provide methods for clients to generate client_id and
+  client_secret. Additionally, you should provide clients with the means to independently manage user accounts for each
+  client. This means that the same username can create two accounts on two different clients.
+- By default, Passport checks the login status of users based on sessions.
+- By default, Passport support some grant types: 
+  - Authorization Code 
+  - Refresh Token 
+  - Password 
+  - Personal Access Token 
+  - Client Credential 
+  - Implicit Grant
+
+## Advantages of Laravel Passport
+- Fully supports integration with the OAuth2 protocol in many ways.
+
+## Disadvantages of Laravel Passport
+- It hasn't supported Social login and SSO login yet. You need to develop your own solution.
+
+## Error Checking
+- [ ] Firstly, Need to register client and user account
+- [ ] The redirect_uri must match the redirect URL that was specified when the client was created.
+- [ ] Define the way user can authenticate own account
+
+## Next?
+Try to figure out how to customize and implement the Single Sign-On (SSO) login and Social login, and integrate them into the authentication process. 
+
 ## References
+
 - https://laravel.com/docs/10.x/passport
 - https://laravel.com/docs/10.x/sail
 - https://auth0.com/docs/get-started/authentication-and-authorization-flow
