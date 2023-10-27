@@ -44,5 +44,7 @@ class AuthServiceProvider extends ServiceProvider
         ]);
 
         Passport::enableImplicitGrant();
+
+        Passport::cookie('oidc_token');
     }
 }

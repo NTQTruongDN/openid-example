@@ -171,3 +171,4 @@ Try to figure out how to customize and implement the Single Sign-On (SSO) login 
 - https://auth0.com/docs/get-started/authentication-and-authorization-flow
 - https://openid.net/specs/openid-connect-core-1_0.html
 - https://oauth2.thephpleague.com/authorization-server/auth-code-grant/
+- https://curity.io/resources/learn/single-sign-on-introduction/
