@@ -1,7 +1,6 @@
 import {ref, reactive, toRefs} from 'vue';
-import {randomBits} from "iron-webcrypto";
 import {integer} from "vscode-languageserver-types";
-import {randomBytes} from "crypto";
+import {randomBytes, } from "crypto";
 
 const authenticated = ref(false);
 const me = reactive({});
@@ -17,7 +16,15 @@ export default function useAuth() {
     // @ts-ignore
     params.set('redirect_uri', app.auth.callback);
     params.set('scope', 'openid');
-    params.set('state', generateState());
+
+    let state = localStorage.getItem('auth_state');
+    if(!state) {
+      state = generateState();
+    }
+    params.set('state', state);
+    params.set('code_challenge', sha256(generateCodeVerifier()))
+    params.set('code_challenge_method', 'S256')
+
 
     // @ts-ignore
     window.location.href = app.auth.authServer + '/oauth/authorize?' + params.toString()
@@ -25,7 +32,6 @@ export default function useAuth() {
 
   const exchangeCodeToken = (auth_code: string) => {
     const {app} = useRuntimeConfig();
-    debugger;
 
     const TOKEN_ENDPOINT = app.auth.authServer + '/oauth/token';
     $fetch(TOKEN_ENDPOINT, {
@@ -54,19 +60,37 @@ export default function useAuth() {
   }
 
   const generateState = () => {
-    return random().toString();
+    const state = btoa(random().toString());
+    localStorage.setItem('auth_state', state);
+    return state;
   }
 
 
   const generateCodeVerifier = () => {
-
+    return btoa(random().toString());
+  }
+  
+  const random  = (byte: integer = 32) => {
+    const charset =
+    '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
+  let random = '';
+  const randomValues = Array.from(
+    window.crypto.getRandomValues(new Uint8Array(43))
+  );
+  randomValues.forEach(v => (random += charset[v % charset.length]));
+  return random;
   }
 
-  const generateNonce = () => {
+  const getCrypto = () => window.crypto;
 
-  }
-
-  const random  = (byte: integer = 32) => randomBytes(byte)
+  const sha256 = async (s: string) => {
+    const digestOp: any = getCrypto().subtle.digest(
+      { name: 'SHA-256' },
+      new TextEncoder().encode(s)
+    );
+  
+    return await digestOp;
+  };
 
   return {
     authenticated,
