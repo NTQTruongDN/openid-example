@@ -6,6 +6,7 @@ We use the flowing packages and tools to develop the IdP:
 
 - [Passport Package](https://laravel.com/docs/10.x/passport): Authentication package
 - [Sail Package](https://laravel.com/docs/10.x/sail): Development environment with Docker and PHP 8.2 runtime, MySQL
+- [Breeze Package](https://github.com/laravel/breeze)
 
 ## Preparation
 
@@ -22,7 +23,8 @@ sail composer require laravel/passport
 ```
 
 2. Run migration
-First and foremost, you must run the default migration if you want to utilize the default database structure provided by `laravel/passport`
+   First and foremost, you must run the default migration if you want to utilize the default database structure provided
+   by `laravel/passport`
 
 ```shell
 # With native
@@ -34,7 +36,7 @@ sail php artisan migrate
 
 3. Install passport
 
-This command will create the encryption keys necessary for generating secure access tokens and will also create 
+This command will create the encryption keys necessary for generating secure access tokens and will also create
 'personal access' and 'password grant' clients used for generating access tokens.
 We use the `--uuids` option to employ Client UUIDs instead of auto-increment IDs.
 
@@ -94,7 +96,20 @@ public function boot(): void
 }
 ```
 
-## OpenId Connect core
+### Create example User
+
+Using tinker and create an example user
+
+```php
+\App\Models\User::query()->create([
+        'email' => 'example@gmail.com',
+        'password' => '123455667',
+        'name' => 'example',
+        'email_verified_at' => now()
+    ])
+```
+
+## OpenId Connect
 
 The instructions above help you integrate `laravel\passport` into a Laravel project.
 
@@ -108,8 +123,11 @@ of Claims to communicate information about the End-User.
 
 It also describes the security and privacy considerations for using OpenID Connect.
 
-## How to implement?
-Now, we dive into how to implement the IdP with some common flows.
+## How to implement with passport?
+
+Next, We dive into how to implement the IdP with `laravel/passport`.
+
+### Authentication flow
 
 OpenID Connect supports 3 main Authentication flow:
 
@@ -117,8 +135,43 @@ OpenID Connect supports 3 main Authentication flow:
 - [Implicit Flow](./docs/IMPLICIT-FLOW.MD)
 - [Hybrid Flow](./docs/HYBRID-FLOW.MD)
 
+### Single Sign-On
+- [Single Sign On](docs/SSO.MD)
+
+## Key Points to Note
+- The Authorization Server is responsible for centrally managing user information and providing authentication methods
+  on this server
+- To integrate with the Authorization Server, it is essential to provide methods for clients to generate client_id and
+  client_secret. Additionally, you should provide clients with the means to independently manage user accounts for each
+  client. This means that the same username can create two accounts on two different clients.
+- By default, Passport checks the login status of users based on sessions.
+- By default, Passport support some grant types: 
+  - Authorization Code 
+  - Refresh Token 
+  - Password 
+  - Personal Access Token 
+  - Client Credential 
+  - Implicit Grant
+
+## Advantages of Laravel Passport
+- Fully supports integration with the OAuth2 protocol in many ways.
+
+## Disadvantages of Laravel Passport
+- It hasn't supported Social login and SSO login yet. You need to develop your own solution.
+
+## Error Checking
+- [ ] Firstly, Need to register client and user account
+- [ ] The redirect_uri must match the redirect URL that was specified when the client was created.
+- [ ] Define the way user can authenticate own account
+
+## Next?
+Try to figure out how to customize and implement the Single Sign-On (SSO) login and Social login, and integrate them into the authentication process. 
+
 ## References
+
 - https://laravel.com/docs/10.x/passport
 - https://laravel.com/docs/10.x/sail
 - https://auth0.com/docs/get-started/authentication-and-authorization-flow
 - https://openid.net/specs/openid-connect-core-1_0.html
+- https://oauth2.thephpleague.com/authorization-server/auth-code-grant/
+- https://curity.io/resources/learn/single-sign-on-introduction/
