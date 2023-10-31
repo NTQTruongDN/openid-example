@@ -135,6 +135,9 @@ OpenID Connect supports 3 main Authentication flow:
 - [Implicit Flow](./docs/IMPLICIT-FLOW.MD)
 - [Hybrid Flow](./docs/HYBRID-FLOW.MD)
 
+### Single Sign-On
+- [Single Sign On](docs/SSO.MD)
+
 ## Key Points to Note
 - The Authorization Server is responsible for centrally managing user information and providing authentication methods
   on this server

@@ -1,5 +1,7 @@
 # Authentication using the Authorization Code Flow
 
+**Support:** Regular Web (Using form post), SPA, Mobile
+
 - This section describes how to perform authentication using the Authorization Code Flow. When using the Authorization
   Code Flow, all tokens are returned from the Token Endpoint.
 - The Authorization Code Flow returns an Authorization Code to the Client, which can then exchange it for an ID Token
@@ -19,7 +21,7 @@ Below is the common flow providing by OpenID Connect
 
 Below is the detailed flow when using Laravel Passport by default.
 
-![authorization-flow-detail](./assets/authorization_flow_detail_with_passport.svg)
+![authorization-flow-detail](assets/authorization_flow_detail_with_passport.svg)
 
 ## Step by step
 
@@ -46,7 +48,7 @@ sail php artisan passport:client
 
 Example:
 
-![create-client command](./assets/create-client.png)
+![create-client command](assets/create-client.png)
 
 **Explanation:**
 
@@ -136,6 +138,31 @@ First of all, You must define the authentication methods and implement it in `Au
 
 **4.2. Implement authentication**
 
+**Redirecting For Authorization**
+
+Example with laravel app:
+```php
+// In route web.php
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+Route::get('/redirect', function (Request $request) {
+    $request->session()->put('state', $state = Str::random(40));
+
+    $query = http_build_query([
+        'client_id' => 'client-id',
+        'redirect_uri' => 'http://third-party-app.com/callback',
+        'response_type' => 'code',
+        'scope' => '',
+        'state' => $state,
+        // 'prompt' => '', // "none", "consent", or "login"
+    ]);
+
+    return redirect('http://passport-app.test/oauth/authorize?'.$query);
+});
+
+```
+
 **4.2.1. Implement authenticate by password**
 
 In this sample project, we use [Laravel starter kit](https://laravel.com/docs/10.x/starter-kits#laravel-breeze) for
@@ -161,6 +188,34 @@ http://localhost:3000/auth/callback/authorization?code=def50....b3bfdb
 
 Passport is already defined authorize endpoint is `/oauth/token`.
 
+**Example: Handle with laravel web app**
+```php
+// In route web.php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+Route::get('/callback', function (Request $request) {
+    $state = $request->session()->pull('state');
+
+    throw_unless(
+        strlen($state) > 0 && $state === $request->state,
+        InvalidArgumentException::class,
+        'Invalid state value.'
+    );
+
+    $response = Http::asForm()->post('http://passport-app.test/oauth/token', [
+        'grant_type' => 'authorization_code',
+        'client_id' => 'client-id',
+        'client_secret' => 'client-secret',
+        'redirect_uri' => 'http://third-party-app.com/callback',
+        'code' => $request->code,
+    ]);
+
+    return $response->json();
+});
+```
+
 **5.1.1. Parameters:**
 - grant_type: With value `authorization_code`
 - client_id: The client account
@@ -182,3 +237,145 @@ Passport is already defined authorize endpoint is `/oauth/token`.
 ### 6. Finish
 
 You should save this `access_token` and `refresh_token` in local and use it for accessing to the owner resource.
+
+### Proof Key for Code Exchange
+- The Authorization Code grant with "Proof Key for Code Exchange" (PKCE) is a secure way to authenticate single page applications or native applications to access your API.
+- An authorization request that uses PKCE goes out with code_challenge parameter and optionally with code_challenge_method parameter.
+
+![Flow](assets/IdP-authorization_flow_PKCE.svg)
+
+**1. Register client**
+
+Unlike the normal authorization flow, we register the passport client without `client_secret`
+
+```shell
+php artisan passport:client --public
+```
+
+**2. Code Verifier & Code Challenge**
+
+In this sample, I will develop the consumer app with `NuxtJS`
+
+```ts
+
+// Function will be called when click button `Login with SSO Server`
+const loginWithSSOSever = async () => {
+    const params = new URLSearchParams();
+    // @ts-ignore
+    params.set('client_id', app.auth.clientId);
+    params.set('response_type', 'code');
+    // @ts-ignore
+    params.set('redirect_uri', app.auth.callback);
+    params.set('scope', 'openid');
+
+    let state = _getAuthState() || generateState();
+    params.set('state', state);
+
+    const code_challenge = await generateCodeChallenge(generateCodeVerifier());
+
+    params.set('code_challenge', code_challenge)
+    params.set('code_challenge_method', 'S256')
+
+    // @ts-ignore
+    window.location.href = app.auth.authServer + '/oauth/authorize?' + params.toString()
+}
+
+const generateState = () => {
+    const state = btoa(random().toString());
+    sessionStorage.setItem('_ast', state); // Save to session storage for verifing this next step
+    return state;
+}
+
+const _getAuthState = () => sessionStorage.getItem('_ast')
+
+// genereate code verifier
+const generateCodeVerifier = () => {
+    const code_verifier = random().toString();
+    sessionStorage.setItem('_cv', code_verifier); // Save to session storage and this value will push to server in exchange token step
+
+    return code_verifier;
+}
+
+const random = (byte = 32) => {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let random = '';
+    const randomValues = Array.from(
+        getCrypto().getRandomValues(new Uint8Array(43))
+    );
+    randomValues.forEach(v => (random += charset[v % charset.length]));
+    return random;
+}
+
+const getCrypto = () => window.crypto;
+
+const generateCodeChallenge = async (s: string): Promise<string> => {
+    const digestOp: ArrayBuffer = await getCrypto().subtle.digest(
+        {name: 'SHA-256'},
+        new TextEncoder().encode(s)
+    );
+
+    return btoa(String.fromCharCode(...new Uint8Array(digestOp)))
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+};
+```
+
+**3. Exchange token**
+
+In the callback
+
+```ts
+  const exchangeCodeToken = (auth_code: string) => {
+    const {app} = useRuntimeConfig();
+    const TOKEN_ENDPOINT = app.auth.authServer + '/oauth/token';
+
+    $fetch(TOKEN_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({
+        'grant_type': 'authorization_code',
+        'client_id': app.auth.clientId,
+        'code_verifier': _getCodeVerifier(),
+        'redirect_uri': app.auth.callback,
+        'code': auth_code
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((res: any) => {
+      _setAccessToken(res.access_token, res.type)
+
+      getUserInfo().then((data) => {
+        // @ts-ignore
+        me.value = data;
+        authenticated.value = true;
+        navigateTo('/');
+      })
+    }).catch((err: any) => {
+      //TODO: Handle Authorize failed
+      console.error(err)
+      alert(err);
+    });
+  }
+
+  const getUserInfo = async () => {
+    return await $fetch('http://localhost/api/me', {
+      method: "GET",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + getAccessToken()
+      }
+    });
+  }
+
+  const _setAccessToken = (access_token: string, type: string) => {
+    let cookie = useCookie(app.auth?.tokenKey)
+    cookie.value = access_token;
+  }
+
+  const getAccessToken = () => {
+    let cookie = useCookie(app.auth?.tokenKey) // _atk_9a7f682d-8d56-4bd3-98b9-36a6d6d5edc8 - '_atk_' + process.env.AUTH_CLIENT_ID ex:
+    return cookie.value;
+  }
+```
