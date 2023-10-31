@@ -1,4 +1,4 @@
-import {ref, reactive, toRefs} from 'vue';
+import {ref} from 'vue';
 import {useCookie, useState} from "nuxt/app";
 
 const authenticated = ref(false);
@@ -72,12 +72,12 @@ export default function useAuth() {
   }
 
   const _setAccessToken = (access_token: string, type: string) => {
-    let cookie = useCookie('_atk')
+    let cookie = useCookie(app.auth?.tokenKey)
     cookie.value = access_token;
   }
 
   const getAccessToken = () => {
-    let cookie = useCookie('_atk')
+    let cookie = useCookie(app.auth?.tokenKey)
     return cookie.value;
   }
 

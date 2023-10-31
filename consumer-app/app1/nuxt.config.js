@@ -14,7 +14,7 @@ export default defineNuxtConfig({
         clientId: process.env.AUTH_CLIENT_ID,
         callback: process.env.AUTH_CALLBACK_URL,
         authServer: process.env.AUTH_DOMAIN,
-        tokenKey: '_atk'
+        tokenKey: '_atk_'+ process.env.AUTH_CLIENT_ID
       }
     }
   }

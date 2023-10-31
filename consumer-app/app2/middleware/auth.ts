@@ -1,6 +1,6 @@
 import useAuth, {useMe} from "~/composables/useAuth";
 
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(async (to, from) => {
   // @ts-ignore
   const {authenticated, getAccessToken, getUserInfo} = useAuth()
   const me = useMe();
@@ -8,24 +8,25 @@ export default defineNuxtRouteMiddleware((to, from) => {
   // @ts-ignore
   const token = getAccessToken();
 
-  if (token) {
-    // check if value exists
-    getUserInfo().then((res) => {
+  if (token && !me.value) {
+    const userInfo = await getUserInfo()
+    console.log(userInfo);
+    if (userInfo) {
       authenticated.value = true;
       // @ts-ignore
-      me.value = res;
+      me.value = userInfo;
 
-      navigateTo('/')
-      return;
-    });
+      console.log(me)
+      return navigateTo('/');
+    }
   }
 
   // if token exists and url is /login redirect to homepage
-  if (me.value && to?.name === 'login') {
+  if (token && me.value && to?.name === 'login') {
     return navigateTo('/');
   }
 
-  if (!token && to?.name !== 'login') {
+  if ((!token && to?.name !== 'login') || !me.value) {
     abortNavigation();
     return navigateTo('/login');
   }
