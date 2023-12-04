@@ -13,6 +13,7 @@ You can [read more in official docs](https://openid.net/specs/openid-connect-cor
 
 ### Common flow
 
+```plantuml
 @startuml C4_Elements
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
@@ -22,6 +23,7 @@ System(systemAlias, "Label", "Optional Description")
 
 Rel(personAlias, containerAlias, "Label", "Optional Technology")
 @enduml
+```
 
 Below is the common flow providing by OpenID Connect
 
