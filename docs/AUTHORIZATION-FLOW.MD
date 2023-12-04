@@ -13,6 +13,16 @@ You can [read more in official docs](https://openid.net/specs/openid-connect-cor
 
 ### Common flow
 
+@startuml C4_Elements
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(personAlias, "Label", "Optional Description")
+Container(containerAlias, "Label", "Technology", "Optional Description")
+System(systemAlias, "Label", "Optional Description")
+
+Rel(personAlias, containerAlias, "Label", "Optional Technology")
+@enduml
+
 Below is the common flow providing by OpenID Connect
 
 ![authorization-flow](./assets/authorization-flow.svg)
