@@ -1,0 +1,30 @@
+name: Backend Linting Tests
+
+on: [ push, pull_request ]
+
+jobs:
+  backend_linting_tests:
+    name: Run php linting (PHPStan + PHPCS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Set up environments
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          coverage: none
+
+      # Install dependencies
+      - name: Install composer dependencies
+        run: composer install -n --prefer-dist
+
+      # Run PHPCS with laravel pint
+      - name: Run PHPCS
+        run: ./vendor/bin/pint --test
+
+      # Run PHPStan
+      - name: Run Static Analysis With PHPStan
+        run: ./vendor/bin/phpstan --error-format=github

@@ -135,8 +135,11 @@ OpenID Connect supports 3 main Authentication flow:
 - [Implicit Flow](./docs/IMPLICIT-FLOW.MD)
 - [Hybrid Flow](./docs/HYBRID-FLOW.MD)
 
-### Single Sign-On
+### Others
 - [Single Sign On](docs/SSO.MD)
+- [Customize claims with Passport](docs/CLAIMS.MD)
+- [Session management](docs/SESSION_MANAGEMENT.MD)
+- [Logging and monitoring](docs/LOGGING_MONITORING.MD)
 
 ## Key Points to Note
 - The Authorization Server is responsible for centrally managing user information and providing authentication methods
@@ -164,8 +167,6 @@ OpenID Connect supports 3 main Authentication flow:
 - [ ] The redirect_uri must match the redirect URL that was specified when the client was created.
 - [ ] Define the way user can authenticate own account
 
-## Next?
-Try to figure out how to customize and implement the Single Sign-On (SSO) login and Social login, and integrate them into the authentication process. 
 
 ## References
 
@@ -175,3 +176,4 @@ Try to figure out how to customize and implement the Single Sign-On (SSO) login 
 - https://openid.net/specs/openid-connect-core-1_0.html
 - https://oauth2.thephpleague.com/authorization-server/auth-code-grant/
 - https://curity.io/resources/learn/single-sign-on-introduction/
+- https://curity.io/resources/learn/implementing-custom-claims/
