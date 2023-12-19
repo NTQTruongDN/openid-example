@@ -20,6 +20,13 @@ use function route as route;
 */
 
 Route::get('/', function () {
+    $accessToken = \App\Models\AccessToken::query()->find('fe41d2810e0d16c8397ff1b6edcb8deb3589cddb5e0b5c9177f5892e521afa036aa9f0b29cc8e62b');
+
+    dd(
+        $accessToken->toArray(),
+        $accessToken->revoke(),
+        $accessToken->refresh()->toArray()
+    );
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),

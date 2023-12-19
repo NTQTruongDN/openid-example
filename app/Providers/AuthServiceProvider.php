@@ -43,8 +43,6 @@ class AuthServiceProvider extends ServiceProvider
             'email' => "Get email and email_verified",
         ]);
 
-        Passport::enableImplicitGrant();
-
         Passport::cookie('oidc_token');
     }
 }
